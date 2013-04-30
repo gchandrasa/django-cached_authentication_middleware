@@ -49,11 +49,12 @@ else:
     user_preprocessor = profile_preprocessor
 
 
-def invalidate_cache(sender, instance, **kwargs):
-    if isinstance(instance, User):
-        key = CACHE_KEY % instance.id
+def invalidate_cache(sender, user, **kwargs):
+    """ user should be User instance or user primary key """
+    if isinstance(user, User):
+        key = CACHE_KEY % user.id
     else:
-        key = CACHE_KEY % instance.user_id
+        key = CACHE_KEY % user
     cache.delete(key)
 
 
@@ -78,9 +79,6 @@ class Middleware(object):
     def __init__(self):
         post_save.connect(invalidate_cache, sender=User)
         post_delete.connect(invalidate_cache, sender=User)
-        if profile_model:
-            post_save.connect(invalidate_cache, sender=profile_model)
-            post_delete.connect(invalidate_cache, sender=profile_model)
 
     def process_request(self, request):
         assert hasattr(request, 'session'), "The Django authentication middleware requires session middleware to be installed. Edit your MIDDLEWARE_CLASSES setting to insert 'django.contrib.sessions.middleware.SessionMiddleware'."
